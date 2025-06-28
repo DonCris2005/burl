@@ -46,3 +46,23 @@ invalid url: An invalid URL
 does not resolve: https://wat/foo.js
 does not resolve: https://notarealsubdomain.example.com/
 ```
+
+## Distributed usage
+
+The project also provides a simple client/server mode. Start one or more
+servers:
+
+```
+▶ go run ./cmd/server -addr :8080
+```
+
+Then run the client providing the list of servers, total threads and the
+URLs to check:
+
+```
+▶ cat urls | go run ./cmd/client -servers "server1:8080,server2:8080" -threads 50
+```
+
+The client will detect which servers are reachable, split the URLs between
+them and divide the total number of threads proportionally.
+The results from each server are printed on the client.
