@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -15,6 +16,17 @@ import (
 )
 
 func main() {
+	errFile, err := os.OpenFile("Error.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalf("failed to open error log: %v", err)
+	}
+	defer errFile.Close()
+	log.SetOutput(io.MultiWriter(os.Stderr, errFile))
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic recovered: %v", r)
+		}
+	}()
 	flag.Parse()
 
 	var input io.Reader

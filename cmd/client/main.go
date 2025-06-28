@@ -36,6 +36,18 @@ type checkResponse struct {
 }
 
 func main() {
+	errFile, err := os.OpenFile("Error.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalf("failed to open error log: %v", err)
+	}
+	defer errFile.Close()
+	log.SetOutput(io.MultiWriter(os.Stderr, errFile))
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic recovered: %v", r)
+		}
+	}()
+
 	var file string
 	var threadTotal int
 	var serverList string
@@ -89,6 +101,7 @@ func main() {
 	}
 
 	offset := 0
+	remaining := len(urls)
 	for i, srv := range active {
 		count := per
 		if i < extra {
@@ -109,12 +122,20 @@ func main() {
 			continue
 		}
 		resp.Body.Close()
+		goods := 0
+		bads := 0
 		for _, r := range cr.Results {
 			if r.Error != "" {
 				fmt.Printf("%s: %s\n", r.URL, r.Error)
+				bads++
 			} else if r.Status != "" && r.Status != "200 OK" {
 				fmt.Printf("%s: %s\n", r.URL, r.Status)
+				bads++
+			} else {
+				goods++
 			}
 		}
+		remaining -= count
+		fmt.Printf("server %s -> good:%d bad:%d remaining:%d\n", srv, goods, bads, remaining)
 	}
 }
